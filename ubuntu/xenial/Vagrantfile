@@ -5,7 +5,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "testvm" do |testvm|
-    testvm.vm.box = "ubuntu/xenial"
+    testvm.vm.box = "ubuntu/xenial64"
     testvm.vm.network :private_network, ip: "192.168.33.21"
     
     testvm.vm.provision "ansible" do |ansible|
