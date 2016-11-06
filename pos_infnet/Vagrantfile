@@ -1,0 +1,61 @@
+﻿# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+VM_CPUS=1
+
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.define "bigdataVM" do |config|
+    config.vm.box = "bento/debian-8.2"
+    config.vm.hostname = "bigdata"
+    config.vm.boot_timeout = 60
+    
+    #config.vm.network "private_network", type: "dhcp"
+    
+    config.vm.provision "shell", inline: "sudo apt-get update"
+    config.vm.provision "shell", inline: "sudo apt-get install -y xfce4 xfce4-goodies nodm"
+    config.vm.provision "shell", inline: "sudo apt-get install -y python3 python3-spyderlib spyder3 python3-nltk"
+    # Permit anyone to start the GUI
+    config.vm.provision "shell", inline: "sudo sed -i 's/NODM_ENABLED=.*$/NODM_ENABLED=true/' /etc/default/nodm"
+    config.vm.provision "shell", inline: "sudo sed -i 's/NODM_USER=.*$/NODM_USER=vagrant/' /etc/default/nodm"
+    config.vm.provision "shell", inline: "sudo shutdown -r now"
+  end
+  config.vm.synced_folder ".", "/vagrant"
+  
+  
+  config.vm.provider "virtualbox" do |vbox|
+    vbox.name = "BigData"  
+    vbox.cpus = VM_CPUS
+    vbox.gui = true
+    
+    # Give VM 1/4 system memory 
+    host = RbConfig::CONFIG['host_os']
+    if host =~ /darwin/
+      #sysctl returns Bytes and we need to convert to MB
+      mem = `sysctl -n hw.memsize`.to_i / 1024
+    elsif host =~ /linux/
+      # meminfo shows KB and we need to convert to MB
+      mem = `grep 'MemTotal' /proc/meminfo | sed -e 's/MemTotal://' -e 's/ kB//'`.to_i 
+    elsif host =~ /mswin|mingw|cygwin/
+      # Windows code via https://github.com/rdsubhas/vagrant-faster
+      mem = `wmic computersystem Get TotalPhysicalMemory`.split[1].to_i / 1024
+    end
+    mem = mem / 1024 / 4
+    vbox.customize ["modifyvm", :id, "--memory", mem]
+    
+    
+    # Ensure DNS resolution will work within the VM.
+    #vbox.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
+    #vbox.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
+    vbox.customize ['modifyvm', :id, '--vram', '32']
+    vbox.customize ['modifyvm', :id, '--cpuhotplug', 'on']
+    vbox.customize ["modifyvm", :id, "--cpuexecutioncap", "100"]
+    vbox.customize ["modifyvm", :id, "--usb", "on"]  
+    vbox.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+    vbox.customize ["modifyvm", :id, "--draganddrop", "hosttoguest"]
+    vbox.customize ["modifyvm", :id, "--hwvirtex", "on"]
+  end
+
+end
+
