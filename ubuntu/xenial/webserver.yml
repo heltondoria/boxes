@@ -1,6 +1,6 @@
 - hosts: all
   sudo: True
-  user: vagrant
+  user: ubuntu
   tasks:
     - name: "Atualiza pacotes e instala o nginx com o apt"
       apt: name={{ item }} state=latest update_cache=yes install_recomends=yes
